@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 class SelectionRectangle extends StatefulWidget {
   final Rect initialRect;
@@ -126,7 +127,7 @@ class _SelectionRectangleState extends State<SelectionRectangle> {
               child: Container(
                 width: 20, // Visible handle size
                 height: 20,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: Colors.blue,
                   shape: BoxShape.circle,
                 ),

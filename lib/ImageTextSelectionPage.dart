@@ -1,9 +1,12 @@
-import 'dart:typed_data';
-import 'package:flutter/material.dart';
 import 'dart:io';
+
+import 'package:flutter/material.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
 import 'package:image/image.dart' as img;
-import 'selection_rectangle.dart';
+import 'package:ocr_app/utility/image_loader.dart';
+import 'package:ocr_app/utility/text_recognition_service.dart';
+import 'package:ocr_app/widgets/image_interactive_viewer.dart';
+import 'package:ocr_app/widgets/text_selection_panel_drawer.dart';
 
 class ImageTextSelectionPage extends StatefulWidget {
   final File imageFile;
@@ -36,27 +39,13 @@ class _ImageTextSelectionPageState extends State<ImageTextSelectionPage> {
   }
 
   Future<void> _loadImageDimensions() async {
-    final bytes = await widget.imageFile.readAsBytes();
-    final image = img.decodeImage(Uint8List.fromList(bytes));
-    if (image != null) {
+    final size = await ImageLoader.loadImageDimensions(widget.imageFile);
+    if (size != null) {
       setState(() {
-        _image = image;
-        _originalImageSize = Size(image.width.toDouble(), image.height.toDouble());
+        _originalImageSize = size;
         _isImageSizeLoaded = true;
       });
     }
-  }
-
-  Future<void> _extractTextFromImage() async {
-    final inputImage = InputImage.fromFile(widget.imageFile);
-    final textRecognizer = GoogleMlKit.vision.textRecognizer();
-    final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
-
-    setState(() {
-      _textBlocks = recognizedText.blocks;
-    });
-
-    textRecognizer.close();
   }
 
   Rect _mapBoxToDisplayedImage(Rect originalBox) {
@@ -89,19 +78,39 @@ class _ImageTextSelectionPageState extends State<ImageTextSelectionPage> {
     });
   }
 
+  Future<void> _extractTextFromImage() async {
+    try {
+      final textBlocks = await TextRecognitionService.extractTextBlocks(widget.imageFile);
+      setState(() {
+        _textBlocks = textBlocks;
+      });
+
+      // Print recognized text for debugging
+      for (final textBlock in _textBlocks) {
+        print('Recognized Text: ${textBlock.text}');
+      }
+    } catch (e) {
+      print('Error during text extraction: $e');
+    }
+  }
+
   void _onDone() {
     if (_selectionRect != null) {
       setState(() {
         _isDoneClicked = true; // Enable text extraction
 
         // Clear the text box before writing new text
-        _textController.clear(); // This will clear the existing text
+        _textController.clear();
 
-        _selectedText = _getSelectedText(); // Get the selected text
-        _textController.text = _selectedText; // Set the selected text to the text controller
+        // Get the selected text
+        _selectedText = _getSelectedText();
 
-        _selectionRect = null; // Clear the selection rectangle
-        _isDoneClicked = false; // Reset the flag after extracting text
+        // Set the selected text to the text controller
+        _textController.text = _selectedText;
+
+        // Reset state
+        _selectionRect = null;
+        _isDoneClicked = false;
       });
     }
   }
@@ -112,7 +121,7 @@ class _ImageTextSelectionPageState extends State<ImageTextSelectionPage> {
     for (TextBlock block in _textBlocks) {
       final blockRect = _mapBoxToDisplayedImage(block.boundingBox);
       if (blockRect.overlaps(_selectionRect!)) {
-        selectedText += block.text + ' ';
+        selectedText += '${block.text} ';
       }
     }
     return selectedText.trim();
@@ -128,65 +137,28 @@ class _ImageTextSelectionPageState extends State<ImageTextSelectionPage> {
         children: [
           Expanded(
             flex: 2,
-            child: GestureDetector(
-              onTapDown: (details) {
-                final imagePosition = details.localPosition;
+            child: ImageInteractiveViewer(
+              imageFile: widget.imageFile,
+              interactiveViewerKey: _interactiveViewerKey,
+              transformationController: _transformationController,
+              selectionRect: _selectionRect,
+              onRectUpdated: _onRectUpdated,
+              onImageTap: (Offset position) {
                 setState(() {
                   _selectionRect = Rect.fromLTWH(
-                    imagePosition.dx,
-                    imagePosition.dy,
+                    position.dx,
+                    position.dy,
                     100.0, // Default width
                     50.0,  // Default height
                   );
                 });
               },
-              child: InteractiveViewer(
-                key: _interactiveViewerKey,
-                transformationController: _transformationController,
-                panEnabled: true,
-                scaleEnabled: true,
-                child: Stack(
-                  children: [
-                    Image.file(
-                      widget.imageFile,
-                      width: MediaQuery.of(context).size.width,
-                    ),
-                    if (_selectionRect != null)
-                      SelectionRectangle(
-                        initialRect: _selectionRect ?? Rect.zero,
-                        onRectUpdated: _onRectUpdated,
-                        onDone: () {}, // Do nothing here; extraction happens only on "Done"
-                      ),
-                  ],
-                ),
-              ),
             ),
           ),
-          const Divider(height: 1, thickness: 1, color: Colors.black),
-          Expanded(
-            flex: 1,
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  ElevatedButton(
-                    onPressed: _onDone,
-                    child: const Text('Done'),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: TextField(
-                      controller: _textController,
-                      maxLines: null,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Selected Text',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          )
+          TextSelectionPanelDrawer(
+            textController: _textController,
+            onDone: _onDone,
+          ),
         ],
       ),
     );
