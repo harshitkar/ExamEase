@@ -10,13 +10,14 @@ class TestData {
   DateTime deadlineTime;
 
   TestData({
-    this.testId = '',
+    String? testId,
     this.testName = '',
     List<QuestionData>? questions,
     DateTime? postedAt,
     DateTime? startFrom,
     DateTime? deadlineTime,
-  })  : questions = questions ?? [],
+  })  : testId = testId ?? RandomIdGenerator.generateTestId(),
+        questions = questions ?? [],
         postedAt = postedAt ?? DateTime.now(),
         startFrom = startFrom ?? DateTime.now(),
         deadlineTime = deadlineTime ?? DateTime.now();

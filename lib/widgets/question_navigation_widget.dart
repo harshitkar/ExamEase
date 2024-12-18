@@ -2,17 +2,19 @@ import 'package:flutter/material.dart';
 
 class QuestionNavigationPanel extends StatelessWidget {
   final int currentQuestionIndex;
-  final List<String> questions; // List of question labels, e.g., "Q1", "Q2"
+  final List<String> questions;
   final Function(int) onNavigateToQuestion;
   final VoidCallback onAddNewQuestion;
+  final ScrollController scrollController;
 
   const QuestionNavigationPanel({
-    Key? key,
+    super.key,
     required this.currentQuestionIndex,
     required this.questions,
     required this.onNavigateToQuestion,
     required this.onAddNewQuestion,
-  }) : super(key: key);
+    required this.scrollController,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +25,7 @@ class QuestionNavigationPanel extends StatelessWidget {
         children: [
           Expanded(
             child: SingleChildScrollView(
+              controller: scrollController,
               scrollDirection: Axis.horizontal,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
