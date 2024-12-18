@@ -14,42 +14,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  File? _selectedImage;
-  final ImagePicker _picker = ImagePicker();
-
-  Future<void> _getImage(ImageSource source) async {
-    final XFile? pickedFile = await _picker.pickImage(source: source);
-    if (pickedFile != null) {
-      setState(() {
-        _selectedImage = File(pickedFile.path);
-      });
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ImageTextSelectionPage(imageFile: _selectedImage!),
-        ),
-      );
-    }
-  }
-
-  Future<void> _pickPdf() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-    );
-
-    if (result != null) {
-      // String pdfPath = result.files.single.path!;
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(
-      //     builder: (context) => PdfTextSelectionPage(pdfPath: pdfPath),
-      //   ),
-      // );
-    } else {
-      // User canceled the picker
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,18 +26,15 @@ class _HomePageState extends State<HomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ElevatedButton(
-              onPressed: () => _getImage(ImageSource.camera),
-              child: const Text('Capture Image'),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () => _getImage(ImageSource.gallery),
-              child: const Text('Pick from Gallery'),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _pickPdf,
-              child: const Text('Extract from PDF'),
+              onPressed: () => {
+                Navigator.push(
+                  context,
+                    MaterialPageRoute(
+                      builder: (context) => const ImageTextSelectionPage(),
+                  ),
+                )
+              },
+              child: const Text('Create test'),
             ),
           ],
         ),

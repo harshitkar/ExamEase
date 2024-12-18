@@ -2,31 +2,37 @@ import 'package:flutter/material.dart';
 
 class QuestionNavigationPanel extends StatelessWidget {
   final int currentQuestionIndex;
-  final List<String> questions; // List of question labels, e.g., "Q1", "Q2"
-  final Function(int) onNavigateToQuestion;
-  final VoidCallback onAddNewQuestion;
+  final List<String> questions;
+  final void Function(int) onNavigateToQuestion;
+  final VoidCallback? onAddNewQuestion;
+  final ScrollController? scrollController;
+  final bool addNewQuestionEnabled;
 
   const QuestionNavigationPanel({
     Key? key,
     required this.currentQuestionIndex,
     required this.questions,
     required this.onNavigateToQuestion,
-    required this.onAddNewQuestion,
+    this.onAddNewQuestion,
+    this.scrollController,
+    this.addNewQuestionEnabled = true,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.blue.shade100,
+      color: const Color(0xFFF5F5F5), // Background matching TestPage
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
       child: Row(
         children: [
           Expanded(
             child: SingleChildScrollView(
+              controller: scrollController,
               scrollDirection: Axis.horizontal,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Generate question navigation tiles
                   ...List.generate(questions.length, (index) {
                     return GestureDetector(
                       onTap: () => onNavigateToQuestion(index),
@@ -35,27 +41,33 @@ class QuestionNavigationPanel extends StatelessWidget {
                         padding: const EdgeInsets.all(8.0),
                         decoration: BoxDecoration(
                           color: index == currentQuestionIndex
-                              ? Colors.blueAccent
-                              : Colors.white,
+                              ? const Color(0xFF0A1D37) // Selected color
+                              : Colors.white, // Unselected color
                           borderRadius: BorderRadius.circular(8.0),
-                          border: Border.all(color: Colors.blue),
+                          border: Border.all(
+                            color: const Color(0xFF0A1D37), // Border color
+                          ),
                         ),
                         child: Text(
                           questions[index],
                           style: TextStyle(
                             color: index == currentQuestionIndex
-                                ? Colors.white
-                                : Colors.blueAccent,
+                                ? Colors.white // Text color for selected tile
+                                : const Color(0xFF0A1D37), // Text color for unselected tile
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     );
                   }),
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: onAddNewQuestion,
-                  ),
+                  // Add new question button (conditionally enabled)
+                  if (addNewQuestionEnabled)
+                    IconButton(
+                      icon: const Icon(Icons.add),
+                      color: const Color(0xFF0A1D37), // Icon color matching TestPage
+                      onPressed: onAddNewQuestion,
+                      tooltip: "Add new question",
+                    ),
                 ],
               ),
             ),

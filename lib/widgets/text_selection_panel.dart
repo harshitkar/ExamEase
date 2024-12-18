@@ -26,7 +26,6 @@ class TextSelectionPanelDrawer extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Rows for Questions and Options
             for (int i = 0; i < 5; i++) ...[
               SelectionRow(
                 text: i == 0 ? 'Question' : 'Option $i',
