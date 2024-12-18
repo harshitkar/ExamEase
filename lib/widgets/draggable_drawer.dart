@@ -15,11 +15,10 @@ class DraggableDrawer extends StatefulWidget {
 }
 
 class _DraggableDrawerState extends State<DraggableDrawer> {
-  double _childSize = 0.3; // Initial size of the drawer
+  double _childSize = 0.3;
   double _dragStart = 0.0;
-  final double _maxHeightFraction = 0.8; // Maximum height of the drawer (80% of screen height)
-  final double _minHeightFraction = 0.1; // Minimum height of the drawer (10% of screen height)
-  bool _isScrollable = false; // Flag to enable scroll when drawer is fully expanded
+  final double _maxHeightFraction = 0.8;
+  final double _minHeightFraction = 0.1;
 
   @override
   void initState() {
@@ -29,22 +28,6 @@ class _DraggableDrawerState extends State<DraggableDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    final double drawerHeight = MediaQuery.of(context).size.height * _childSize;
-
-    // Check if drawer has reached max height
-    if (drawerHeight >= MediaQuery.of(context).size.height * _maxHeightFraction) {
-      if (!_isScrollable) {
-        setState(() {
-          _isScrollable = true;
-        });
-      }
-    } else {
-      if (_isScrollable) {
-        setState(() {
-          _isScrollable = false;
-        });
-      }
-    }
 
     return Align(
       alignment: Alignment.bottomCenter,
@@ -54,11 +37,10 @@ class _DraggableDrawerState extends State<DraggableDrawer> {
         },
         onVerticalDragUpdate: (details) {
           setState(() {
-            // Reverse the direction of drag movement
-            double delta = _dragStart - details.localPosition.dy; // Inverted delta
+            double delta = _dragStart - details.localPosition.dy;
             double newSize = _childSize + delta / MediaQuery.of(context).size.height;
-            _childSize = newSize.clamp(_minHeightFraction, _maxHeightFraction); // Ensure the size stays within bounds
-            _dragStart = details.localPosition.dy; // Update drag position
+            _childSize = newSize.clamp(_minHeightFraction, _maxHeightFraction);
+            _dragStart = details.localPosition.dy;
           });
         },
         child: Container(
@@ -71,7 +53,6 @@ class _DraggableDrawerState extends State<DraggableDrawer> {
           ),
           child: Column(
             children: [
-              // Handle for dragging (user-friendly)
               Container(
                 height: 10, // Height of the handle
                 width: 80, // Width of the handle
@@ -81,13 +62,10 @@ class _DraggableDrawerState extends State<DraggableDrawer> {
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
-              // Scrollable content: only scroll when the drawer reaches max height
               Expanded(
-                child: _isScrollable
-                    ? SingleChildScrollView(
+                child: SingleChildScrollView(
                   child: widget.child,
                 )
-                    : widget.child,
               ),
             ],
           ),
