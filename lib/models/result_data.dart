@@ -1,27 +1,21 @@
 import 'dart:convert';
-
 import 'package:ocr_app/Holders/data_holder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/random_id_generator.dart';
 
 class ResultData {
-  String resultId;
-  String userId;
-  String testId;
+  int? resultId; // Nullable to allow it to be generated during save
+  int userId;
+  int testId;
   int result;
   DateTime submittedAt;
 
   ResultData({
-    String? resultId,
-    String? userId = '',
-    String? testId = '',
-    int? result,
+    this.resultId,
+    required this.userId,
+    required this.testId,
+    required this.result,
     DateTime? submittedAt,
-  })  : resultId = resultId ?? RandomIdGenerator.generateId(),
-        submittedAt = submittedAt ?? DateTime.now(),
-        testId = testId ?? DataHolder.currentTest!.testId,
-        userId = userId ?? DataHolder.currentUser!.userId,
-        result = result ?? DataHolder.currentTest!.result;
+  }) : submittedAt = submittedAt ?? DateTime.now();
 
   Map<String, dynamic> toJson() {
     return {
@@ -45,37 +39,50 @@ class ResultData {
 
   Future<void> saveResult() async {
     final prefs = await SharedPreferences.getInstance();
-    List<String> allResults = prefs.getStringList('') ?? [];
-    resultId = RandomIdGenerator.generateId();
-    while (allResults.contains(resultId)) {
-      resultId = RandomIdGenerator.generateId();
-    }
-    allResults.add(resultId);
-    prefs.setStringList('results', allResults);
-    prefs.setString(resultId, jsonEncode(toJson()));
-  }
 
+    // Get all results
+    List<String> allResults = prefs.getStringList('results') ?? [];
+
+    // Determine the new sequential ID
+    if (allResults.isEmpty) {
+      resultId = 1; // Start from 1 if the list is empty
+    } else {
+      String lastResultIdStr = allResults.last;
+      int lastResultId = int.tryParse(lastResultIdStr) ?? 0;
+      resultId = lastResultId + 1; // Increment from the last ID
+    }
+
+    // Save the new result
+    allResults.add(resultId.toString());
+    prefs.setStringList('results', allResults);
+    prefs.setString(resultId.toString(), jsonEncode(toJson()));
+  }
 
   Future<int> getResult() async {
     final prefs = await SharedPreferences.getInstance();
     final resultsJson = prefs.getStringList('results') ?? [];
-    for (var jsonStr in resultsJson) {
-      final result = ResultData.fromJson(jsonDecode(jsonStr));
-      if (result.testId == testId && result.userId == userId) {
-        print(result.result);
-        return result.result;
+    for (var resultIdStr in resultsJson) {
+      final resultJson = prefs.getString(resultIdStr);
+      if (resultJson != null) {
+        final result = ResultData.fromJson(jsonDecode(resultJson));
+        if (result.testId == testId && result.userId == userId) {
+          return result.result;
+        }
       }
     }
-    print(-1);
     return -1;
   }
 
   Future<void> deleteResult() async {
     final prefs = await SharedPreferences.getInstance();
     final results = prefs.getStringList('results') ?? [];
-    results.removeWhere((jsonStr) {
-      final result = ResultData.fromJson(jsonDecode(jsonStr));
-      return result.testId == testId && result.userId == userId;
+    results.removeWhere((resultIdStr) {
+      final resultJson = prefs.getString(resultIdStr);
+      if (resultJson != null) {
+        final result = ResultData.fromJson(jsonDecode(resultJson));
+        return result.testId == testId && result.userId == userId;
+      }
+      return false;
     });
     await prefs.setStringList('results', results);
   }
@@ -83,6 +90,12 @@ class ResultData {
   static Future<List<ResultData>> getAllResults() async {
     final prefs = await SharedPreferences.getInstance();
     final resultsJson = prefs.getStringList('results') ?? [];
-    return resultsJson.map((jsonStr) => ResultData.fromJson(jsonDecode(jsonStr))).toList();
+    return resultsJson.map((resultIdStr) {
+      final resultJson = prefs.getString(resultIdStr);
+      if (resultJson != null) {
+        return ResultData.fromJson(jsonDecode(resultJson));
+      }
+      throw Exception("Invalid result data");
+    }).toList();
   }
 }

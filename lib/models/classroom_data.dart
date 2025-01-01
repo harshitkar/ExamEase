@@ -5,14 +5,16 @@ import '../Holders/data_holder.dart';
 class ClassroomData {
   static const String baseUrl = 'http://10.0.2.2:5001/api'; // For Android Emulator
 
-  String classroomId;
+  int? classroomId; // Changed to int for sequential ID
   String classroomName;
   DateTime? createdAt;
+  String classroomCode; // Added classroomCode
 
   ClassroomData({
-    this.classroomId = '',
+    this.classroomId,
     this.classroomName = '',
     this.createdAt,
+    this.classroomCode = '', // Default value for classroomCode
   });
 
   Map<String, dynamic> toJson() {
@@ -20,6 +22,7 @@ class ClassroomData {
       'classroomId': classroomId,
       'classroomName': classroomName,
       'createdAt': createdAt?.toIso8601String(),
+      'classroomCode': classroomCode, // Include classroomCode in toJson
     };
   }
 
@@ -28,10 +31,11 @@ class ClassroomData {
       classroomId: json['classroomId'],
       classroomName: json['classroomName'],
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
+      classroomCode: json['classroomCode'] ?? '', // Default to empty string if null
     );
   }
 
-  /// Save classroom to backend
+  /// Save classroom to backend with sequential ID and classroomCode
   Future<void> saveClassroom() async {
     final url = Uri.parse('$baseUrl/classrooms/create');
     try {
@@ -41,6 +45,7 @@ class ClassroomData {
         body: jsonEncode({
           'classroomName': classroomName,
           'createdBy': DataHolder.currentUser?.userId ?? 0, // Ensure createdBy is numeric
+          'classroomCode': classroomCode, // Send classroomCode to the backend
         }),
       );
 
@@ -48,6 +53,7 @@ class ClassroomData {
         final responseData = jsonDecode(response.body);
         classroomId = responseData['classroomId'];
         createdAt = responseData['createdAt'] != null ? DateTime.parse(responseData['createdAt']) : null;
+        classroomCode = responseData['classroomCode'] ?? ''; // Receive classroomCode from response
       } else {
         throw Exception('Failed to create classroom: ${response.body}');
       }
@@ -57,7 +63,7 @@ class ClassroomData {
   }
 
   /// Load classroom by ID from backend
-  static Future<ClassroomData?> loadClassroomData(String classroomId) async {
+  static Future<ClassroomData?> loadClassroomData(int classroomId) async {
     final url = Uri.parse('$baseUrl/classrooms/$classroomId');
     try {
       final response = await http.get(url);
@@ -96,7 +102,7 @@ class ClassroomData {
   }
 
   /// Load all classrooms for a user
-  static Future<List<ClassroomData>> loadAllClassroomsForUser(String userId) async {
+  static Future<List<ClassroomData>> loadAllClassroomsForUser(int userId) async {
     final url = Uri.parse('$baseUrl/classrooms/user/$userId');
     try {
       final response = await http.get(url);
@@ -113,7 +119,7 @@ class ClassroomData {
   }
 
   /// Leave a classroom
-  static Future<void> leaveClassroom(String classroomId) async {
+  static Future<void> leaveClassroom(int classroomId) async {
     final url = Uri.parse('$baseUrl/classrooms/leave');
     try {
       final response = await http.post(
@@ -133,8 +139,13 @@ class ClassroomData {
     }
   }
 
+  int getIdByCode(String classroomCode) {
+    // return classroomId by classroomCode
+    return -1;
+  }
+
   /// Remove a student from a classroom
-  static Future<void> removeStudent(String userId, String classroomId) async {
+  static Future<void> removeStudent(int userId, int classroomId) async {
     final url = Uri.parse('$baseUrl/classrooms/remove-student');
     try {
       final response = await http.post(
@@ -157,7 +168,7 @@ class ClassroomData {
 
 class UserClassroomData {
   final int userId;
-  final String classroomId;
+  final int classroomId;  // Changed to int for sequential ID
   final String role;
 
   UserClassroomData({

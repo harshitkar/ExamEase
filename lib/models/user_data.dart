@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserData {
-  String userId;
+  int? userId; // Changed to int for sequential ID
   String username;
   String phoneNumber;
 
   UserData({
-    this.userId = '',
+    this.userId,
     this.username = '',
     this.phoneNumber = '',
   });
@@ -31,11 +31,22 @@ class UserData {
   Future<void> saveToSharedPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     final users = prefs.getStringList('user') ?? [];
+
+    // Determine the new sequential ID
+    if (users.isEmpty) {
+      userId = 1; // Start from 1 if the list is empty
+    } else {
+      String lastUserJson = users.last;
+      UserData lastUser = UserData.fromJson(jsonDecode(lastUserJson));
+      userId = lastUser.userId! + 1; // Increment from the last ID
+    }
+
+    // Add the new user to the list
     users.add(jsonEncode(toJson()));
     await prefs.setStringList('user', users);
   }
 
-  static Future<UserData?> loadUserData(String userId) async {
+  static Future<UserData?> loadUserData(int userId) async {
     final prefs = await SharedPreferences.getInstance();
     final usersJson = prefs.getStringList('user') ?? [];
     for (var jsonStr in usersJson) {
@@ -60,7 +71,7 @@ class UserData {
     }
   }
 
-  static Future<void> deleteUserData(String userId) async {
+  static Future<void> deleteUserData(int userId) async {
     final prefs = await SharedPreferences.getInstance();
     final users = prefs.getStringList('user') ?? [];
     users.removeWhere((jsonStr) {

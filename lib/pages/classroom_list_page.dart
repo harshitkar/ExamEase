@@ -24,7 +24,7 @@ class _ClassroomListPageState extends State<ClassroomListPage> {
 
   Future<void> _loadClassrooms() async {
     try {
-      final loadedClassrooms = await ClassroomData.loadAllClassroomsForUser(DataHolder.currentUser!.userId);
+      final loadedClassrooms = await ClassroomData.loadAllClassroomsForUser(DataHolder.currentUser!.userId!);
       setState(() {
         classrooms = loadedClassrooms;
         isLoading = false;
@@ -43,7 +43,7 @@ class _ClassroomListPageState extends State<ClassroomListPage> {
 
   Future<void> _leaveClassroom(int index) async {
     final classroomId = classrooms[index].classroomId;
-    await ClassroomData.leaveClassroom(classroomId);
+    await ClassroomData.leaveClassroom(classroomId!);
     setState(() {
       classrooms.removeAt(index);
     });
@@ -159,15 +159,15 @@ class _ClassroomListPageState extends State<ClassroomListPage> {
             ),
             ElevatedButton(
               onPressed: () async {
-                final classroomId = classroomIdController.text.trim();
-                if (classroomId.isEmpty) {
+                final classroomCode = classroomIdController.text.trim();
+                if (classroomCode.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Classroom code cannot be empty')),
                   );
                   return;
                 }
                 try {
-                  ClassroomData? classroom = await ClassroomData.loadClassroomData(classroomId);
+                  ClassroomData? classroom = await ClassroomData.loadClassroomData(ClassroomData().getIdByCode(classroomCode));
                   if (classroom != null) {
                     print(1);
                     await classroom.joinClassroom('student');
