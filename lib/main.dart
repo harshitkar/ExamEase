@@ -11,7 +11,7 @@ void main() async {
   // Clear shared preferences
   await clearSharedPreferences();
   // DataHolder.currentUser = UserData(userId: "Harsh1234", username: 'Harsh',phoneNumber: "9924791022");
-  DataHolder.currentUser = UserData(userId: "3", username: 'Onkar',phoneNumber: "9924791022");
+  DataHolder.currentUser = UserData(userId: 3, username: 'Onkar',phoneNumber: "9924791022");
 
   runApp(const MyApp());
 }

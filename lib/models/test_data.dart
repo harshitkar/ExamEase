@@ -1,11 +1,9 @@
-import 'dart:async';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/random_id_generator.dart';
 import 'question_data.dart';
 
 class TestData {
-  String testId;
+  int? testId; // Changed to int
   String testName;
   List<QuestionData> questions;
   DateTime postedAt;
@@ -13,10 +11,10 @@ class TestData {
   DateTime deadlineTime;
   int testTime;
   int result;
-  String groupId;
+  int classroomId;
 
   TestData({
-    this.testId = '',
+    this.testId,
     this.testName = '',
     List<QuestionData>? questions,
     DateTime? postedAt,
@@ -24,7 +22,7 @@ class TestData {
     DateTime? deadlineTime,
     this.testTime = 0,
     this.result = -1,
-    this.groupId = ''
+    this.classroomId = -1,
   })  : questions = questions ?? [...List.generate(1, (index) => QuestionData())],
         postedAt = postedAt ?? DateTime.now(),
         startFrom = startFrom ?? DateTime.now(),
@@ -40,7 +38,7 @@ class TestData {
       'deadlineTime': deadlineTime.toIso8601String(),
       'testTime': testTime,
       'result': result,
-      'groupId': groupId,
+      'groupId': classroomId,
     };
   }
 
@@ -57,37 +55,44 @@ class TestData {
       deadlineTime: DateTime.parse(json['deadlineTime']),
       testTime: json['testTime'],
       result: json['result'],
-      groupId: json['groupId'],
+      classroomId: json['groupId'],
     );
   }
 
   Future<void> saveTestData() async {
     final prefs = await SharedPreferences.getInstance();
     List<String> allTests = prefs.getStringList('tests') ?? [];
-    testId = RandomIdGenerator.generateId();
-    while (allTests.contains(testId)) {
-      testId = RandomIdGenerator.generateId();
+
+    // Determine the new sequential ID
+    if (allTests.isEmpty) {
+      testId = 1; // Start from 1 if the list is empty
+    } else {
+      String lastTestIdStr = allTests.last;
+      int lastTestId = int.tryParse(lastTestIdStr) ?? 0;
+      testId = lastTestId + 1; // Increment from the last ID
     }
-    allTests.add(testId);
+
+    // Save the new test
+    allTests.add(testId.toString());
     prefs.setStringList('tests', allTests);
-    prefs.setString(testId, jsonEncode(toJson()));
+    prefs.setString(testId.toString(), jsonEncode(toJson()));
   }
 
-  static Future<TestData?> loadTestData(String testId) async {
+  static Future<TestData?> loadTestData(int testId) async {
     final prefs = await SharedPreferences.getInstance();
-    String? testJson = prefs.getString(testId);
+    String? testJson = prefs.getString(testId.toString());
     if (testJson != null) {
       return TestData.fromJson(jsonDecode(testJson));
     }
     return null;
   }
 
-  static Future<void> deleteTestData(String testId) async {
+  static Future<void> deleteTestData(int testId) async {
     final prefs = await SharedPreferences.getInstance();
     List<String> allTests = prefs.getStringList('tests') ?? [];
-    allTests.remove(testId);
+    allTests.remove(testId.toString());
     prefs.setStringList('tests', allTests);
-    prefs.remove(testId);
+    prefs.remove(testId.toString());
   }
 
   static Future<List<TestData>> getAllTestData() async {
@@ -95,18 +100,16 @@ class TestData {
     List<String> allTests = prefs.getStringList('tests') ?? [];
     List<TestData> tests = [];
 
-    for (String testId in allTests) {
-      String? testJson = prefs.getString(testId);
-
+    for (String testIdStr in allTests) {
+      String? testJson = prefs.getString(testIdStr);
       if (testJson != null && testJson.isNotEmpty) {
         try {
           tests.add(TestData.fromJson(jsonDecode(testJson)));
         } catch (e) {
-          print("Error decoding test data for testId $testId: $e");
-
+          print("Error decoding test data for testId $testIdStr: $e");
         }
       } else {
-        print("No data found for testId: $testId or data is empty.");
+        print("No data found for testId: $testIdStr or data is empty.");
       }
     }
 
@@ -120,15 +123,15 @@ class TestData {
     List<String> allTests = prefs.getStringList('tests') ?? [];
     List<TestData> testsByGroup = [];
 
-    for (String testId in allTests) {
-      String? testJson = prefs.getString(testId);
+    for (String testIdStr in allTests) {
+      String? testJson = prefs.getString(testIdStr);
       if (testJson != null && testJson.isNotEmpty) {
         TestData test = TestData.fromJson(jsonDecode(testJson));
-        if (test.groupId == groupId) {
+        if (test.classroomId == groupId) {
           testsByGroup.add(test);
         }
       } else {
-        print("No data found for testId: $testId");
+        print("No data found for testId: $testIdStr");
       }
     }
 
@@ -138,7 +141,7 @@ class TestData {
   }
 
   void updateTestData() async {
-    await deleteTestData(testId);
+    await deleteTestData(testId!);
     await saveTestData();
   }
 }
