@@ -1,95 +1,38 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:ocr_app/models/result_data.dart';
 
-import '../models/option_data.dart';
-import '../models/question_data.dart';
-import '../models/test_data.dart'; // Import your models
+import '../Holders/data_holder.dart';
 import '../widgets/option_tile.dart';
 import '../widgets/question_navigation_widget.dart';
 
-void main() {
-  runApp(const ExamEaseApp());
-}
+class TestAttemptPage extends StatefulWidget {
 
-class ExamEaseApp extends StatelessWidget {
-  const ExamEaseApp({Key? key}) : super(key: key);
+  const TestAttemptPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Hardcoded TestData with questions and options
-    final testData = TestData(
-      testId: "w8qihcwd",
-      testName: "Sample Test",
-      testTime: 45,
-      questions: [
-        QuestionData(
-          questionNumber: 1,
-          questionText: "What is 2 + 2?",
-          options: [
-            OptionData(optionText: "3", optionNumber: 1),
-            OptionData(optionText: "4", optionNumber: 2),
-            OptionData(optionText: "5", optionNumber: 3),
-            OptionData(optionText: "6", optionNumber: 4),
-          ],
-          correctOptionIndex: 1,
-        ),
-        QuestionData(
-          questionNumber: 2,
-          questionText: "What is the capital of France?",
-          options: [
-            OptionData(optionText: "Berlin", optionNumber: 1),
-            OptionData(optionText: "Madrid", optionNumber: 2),
-            OptionData(optionText: "Paris", optionNumber: 3),
-            OptionData(optionText: "Rome", optionNumber: 4),
-          ],
-          correctOptionIndex: 2,
-        ),
-        QuestionData(
-          questionNumber: 3,
-          questionText: "What is the square root of 16?",
-          options: [
-            OptionData(optionText: "2", optionNumber: 1),
-            OptionData(optionText: "4", optionNumber: 2),
-            OptionData(optionText: "6", optionNumber: 3),
-            OptionData(optionText: "8", optionNumber: 4),
-          ],
-          correctOptionIndex: 1,
-        ),
-      ],
-    );
-
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: TestPage(testData: testData),
-    );
-  }
+  State<TestAttemptPage> createState() => _TestAttemptPageState();
 }
 
-class TestPage extends StatefulWidget {
-  final TestData testData;
-
-  const TestPage({required this.testData, Key? key}) : super(key: key);
-
-  @override
-  State<TestPage> createState() => _TestPageState();
-}
-
-class _TestPageState extends State<TestPage> {
+class _TestAttemptPageState extends State<TestAttemptPage> {
+  late List<int?> selectedOptions;
+  int previouslySelectedOption = 0;
   int currentQuestionIndex = 0;
-  late int remainingTimeInSeconds = 0; // Remaining time in seconds
+  late int remainingTimeInSeconds = 0;
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    remainingTimeInSeconds = widget.testData.testTime * 60;
+    selectedOptions = List<int?>.filled(DataHolder.currentTest!.questions.length, null);
+    remainingTimeInSeconds = DataHolder.currentTest!.testTime * 60;
     _startTimer();
 
   }
 
   void _navigateToQuestion(int index) {
-    if (index >= 0 && index < widget.testData.questions.length) {
+    if (index >= 0 && index < DataHolder.currentTest!.questions.length) {
       setState(() {
         currentQuestionIndex = index;
       });
@@ -143,10 +86,112 @@ class _TestPageState extends State<TestPage> {
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
+  void handleOptionSelection(int optionNumber) {
+    setState(() {
+      selectedOptions[currentQuestionIndex] = optionNumber;
+    });
+  }
+
+  void _onSubmitCallback() {
+    _showSubmitConfirmationDialog();
+  }
+
+  void _showSubmitConfirmationDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Submit Test?"),
+          content: const Text("Are you sure you want to submit the test?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _computeAndShowResult();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0A1D37),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: const Text(
+                "Submit",
+                style: TextStyle(
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _computeAndShowResult() {
+    final totalQuestions = DataHolder.currentTest!.questions.length;
+    int correctAnswers = 0;
+
+    for (int i = 0; i < totalQuestions; i++) {
+      final question = DataHolder.currentTest!.questions[i];
+      if (question.correctOptionIndex == selectedOptions[i]) {
+        correctAnswers++;
+      }
+    }
+
+    final result = ((correctAnswers / totalQuestions) * 100).round();
+
+    DataHolder.currentTest!.result = result;
+
+    // ResultData().saveResult();
+    DataHolder.currentTest!.updateTestData();
+
+    _showResultDialog(result);
+  }
+
+  void _showResultDialog(int result) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Test Submitted"),
+          content: Text("Your score is $result%."),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                DataHolder.currentTest = null;
+                int count = 2;
+                Navigator.of(context).popUntil((route) {
+                  return count-- <= 0;
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0A1D37),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: const Text(
+                "OK",
+                style: TextStyle(
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final currentQuestion = widget.testData.questions[currentQuestionIndex];
-    final totalQuestions = widget.testData.questions.length;
+    final currentQuestion = DataHolder.currentTest!.questions[currentQuestionIndex];
+    final totalQuestions = DataHolder.currentTest!.questions.length;
     final progressPercentage = (currentQuestionIndex + 1) / totalQuestions;
 
     return Scaffold(
@@ -162,7 +207,7 @@ class _TestPageState extends State<TestPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    widget.testData.testName,
+                    DataHolder.currentTest!.testName,
                     style: const TextStyle(
                       color: Color(0xFF0A1D37),
                       fontSize: 18,
@@ -186,8 +231,6 @@ class _TestPageState extends State<TestPage> {
                 ],
               ),
             ),
-
-            // Progress Bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
@@ -255,14 +298,21 @@ class _TestPageState extends State<TestPage> {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 16),
-
-                      // Option Tiles
-                      ...currentQuestion.options.map(
-                            (option) => OptionTile(
-                          optionText: "${String.fromCharCode(65 + option.optionNumber - 1)}. ${option.optionText}",
+                      const SizedBox(height: 8),
+                      if (currentQuestion.questionImage != null)
+                        Image.memory(
+                          currentQuestion.questionImage!,
+                          width: double.infinity,
+                          fit: BoxFit.contain,
                         ),
-                      ),
+                      const SizedBox(height: 16),
+                ...currentQuestion.options.map((option) {
+                    return OptionTile(
+                      option: option,
+                      onOptionSelected: handleOptionSelection,
+                      isSelected: selectedOptions[currentQuestionIndex] == option.optionNumber,
+                      );
+                    }),
                     ],
                   ),
                 ),
@@ -274,7 +324,7 @@ class _TestPageState extends State<TestPage> {
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: QuestionNavigationPanel(
                 currentQuestionIndex: currentQuestionIndex,
-                questions: List.generate(widget.testData.questions.length, (index) => 'Q${index + 1}'),
+                questions: List.generate(DataHolder.currentTest!.questions.length, (index) => 'Q${index + 1}'),
                 onNavigateToQuestion: _navigateToQuestion,
                 addNewQuestionEnabled: false,
               ),
@@ -282,9 +332,7 @@ class _TestPageState extends State<TestPage> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: ElevatedButton(
-                onPressed: () {
-                  // Submit test logic
-                },
+                onPressed: _onSubmitCallback,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0A1D37),
                   padding: const EdgeInsets.symmetric(vertical: 12),

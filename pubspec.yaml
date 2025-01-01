@@ -30,6 +30,9 @@ dependencies:
       url: https://github.com/harshitkar/crop_your_image.git
       ref: main
   uuid: ^3.0.5
+  intl: ^0.18.0
+  shared_preferences: ^2.1.0
+
 
 dev_dependencies:
   flutter_test:
@@ -38,3 +41,13 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/fonts/
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Poppins-Italic.ttf
+          style: italic
