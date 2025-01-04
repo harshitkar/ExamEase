@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ocr_app/Holders/data_holder.dart';
 import 'package:ocr_app/models/user_data.dart';
 import 'package:ocr_app/pages/classroom_list_page.dart';
+import 'package:ocr_app/pages/login_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
@@ -32,7 +33,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const ClassroomListPage(),
+      home:  LoginPage(),
     );
   }
 }

@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:ocr_app/models/user_data.dart';
+import 'package:ocr_app/Holders/data_holder.dart';
 
 class AuthService {
-  static const String baseUrl = 'http://10.0.2.2:5001/api';  // For Android Simu.
+  static const String baseUrl = 'http://10.0.2.2:5001/api'; // For Android Simu.
   // static const String baseUrl = 'http://localhost:5001/api'; // For all others
 
   // Method for Sign Up
@@ -21,7 +23,16 @@ class AuthService {
     );
 
     if (response.statusCode == 201) {
-      return json.decode(response.body);
+      final responseData = json.decode(response.body);
+
+      // Set current user in DataHolder
+      DataHolder.currentUser = UserData(
+        userId: responseData['user_id'],
+        username: responseData['username'],
+        phoneNumber: responseData['phone_number'],
+      );
+
+      return responseData;
     } else {
       throw Exception('Failed to create user: ${response.body}');
     }
@@ -40,10 +51,16 @@ class AuthService {
     );
 
     if (response.statusCode == 200) {
-      // Decode the response and add the status field
-      var responseBody = json.decode(response.body);
-      responseBody['status'] = 'success'; // Add status manually
-      return responseBody;
+      final responseData = json.decode(response.body);
+
+      // Set current user in DataHolder
+      DataHolder.currentUser = UserData(
+        userId: responseData['user_id'],
+        username: responseData['username'],
+        phoneNumber: responseData['phone_number'],
+      );
+      print(DataHolder());
+      return responseData;
     } else if (response.statusCode == 401) {
       return {
         'status': 'error',
@@ -56,5 +73,4 @@ class AuthService {
       };
     }
   }
-
 }

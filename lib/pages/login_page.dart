@@ -21,7 +21,7 @@ class _LoginPageState extends State<LoginPage> {
       // Call the AuthService to perform login
       var response = await AuthService().login(username, password);
 
-      if (response['status'] == 'success') {
+      if (response['message'] == 'Login successful') {
         // Navigate to HomePage if login is successful
         Navigator.pushReplacement(
           context,
