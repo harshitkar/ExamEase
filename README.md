@@ -1,16 +1,3 @@
-# ocr_app
-
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+• Developed a test platform with features like text extraction, cropping, and test management to simplify online assessments
+• Designed solutions for handling image and text data, utilizing OCR and Firebase Storage for smooth data processing and retrieval
+• Added OCR support for Devanagari scripts and optimized the app for cross-platform compatibility to reach more users
